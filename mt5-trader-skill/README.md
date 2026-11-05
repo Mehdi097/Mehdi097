@@ -87,6 +87,37 @@ python mt5-analyst/analyst.py --offline --write
 
 ---
 
+## Exe: bla Python / standalone .exe
+
+Bghit bla Python f l'PC? Kayn `mt5trader.exe`: fichier wa7ed fih l'pack kamel, b menu
+ila dert double-click, w b commandes ila khdemti mn `cmd`.
+
+```powershell
+mt5trader.exe setup
+mt5trader.exe doctor
+mt5trader.exe analyze --write
+mt5trader.exe screen --show-fails --write-targets
+mt5trader.exe plan --write
+mt5trader.exe check
+mt5trader.exe tickets
+```
+
+Kifach tjibo (t-tlata khedmin):
+
+1. **b yeddik, 2 dqayq 3la Windows**: doubli klik 3la `mt5-app/build_exe.bat`
+   → kaytle3 `mt5-app/dist/mt5trader.exe`
+2. **GitHub Actions**: copier `ci/build-exe.yml` l `.github/workflows/build-exe.yml`
+   (Add file → Create new file f l web UI), mn be3d **Actions → build-exe** → artifact,
+   wla **Releases → `exe-latest`**
+3. bla exe 7etta: `python mt5-app/runner.py` — nefs l'menu, nefs l'commandes
+
+Koulchi mfesser f **[BUILD-EXE.md](BUILD-EXE.md)**.
+
+L'exe ma kayghnich 3la MetaTrader: **l'terminal khass ykoun installé w mfto7**, w
+AutoTrading khass ykoun ON. Machi daemon: jadwal → Task Scheduler.
+
+---
+
 ## Copy-paste prompt
 
 Fichier **[PROMPT.md](PROMPT.md)** fih l'bloc li kat-ls9o f Claude bach yinstalli l'skills w
@@ -181,6 +212,7 @@ mt5-trader-skill/
   mt5-exposure/          SKILL.md, rebalance.py
   mt5-calendar/          SKILL.md, econ.py
   mt5-news/              SKILL.md, news.py
+  mt5-app/               runner.py, mt5trader.spec, build_exe.py, build_exe.bat
   tests/                 unittest suite + an offline snapshot fixture
 ```
 
@@ -191,7 +223,7 @@ cd mt5-trader-skill
 python3 -m unittest discover -s tests -t tests -v
 ```
 
-Kaykhedmo offline, bla MT5, bla internet: 124 tests 3la l'arithmetic dyal l'lot, l'risk
+Kaykhedmo offline, bla MT5, bla internet: 139 tests 3la l'arithmetic dyal l'lot, l'risk
 gate, l'fingerprints, l'executor, l'stats, w l'spec dyal l'symbols.
 
 ---

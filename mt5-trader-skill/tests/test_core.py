@@ -204,6 +204,23 @@ class TestBridgeOffline(unittest.TestCase):
         self.assertEqual(req["price"], self.b.tick("EURUSD")["ask"])
         self.assertIn("type_filling", req)
 
+    def test_snapshot_path_relative_to_the_trader_dir(self):
+        """The exe can start from any CWD: "data/snapshot.json" means trader/data/."""
+        tmp = tempfile.mkdtemp()
+        try:
+            root = _load.make_trader(tmp)
+            cfg = _load.read_json(os.path.join(root, "config.json"))
+            cfg["offline_snapshot"] = "data/snapshot.json"      # relative, like the example
+            _load.write_json(os.path.join(root, "config.json"), cfg)
+            bridge = _load.load("mt5-core", "bridge")
+            b = bridge.Bridge(root, offline=True)
+            self.assertTrue(b._snapshot_path().endswith(os.path.join("trader", "data",
+                                                                    "snapshot.json")))
+            self.assertGreater(b.account()["equity"], 0)        # it really loaded
+            b.shutdown()
+        finally:
+            _load.cleanup(tmp)
+
     def test_kill_switch_file(self):
         bridge = _load.load("mt5-core", "bridge")
         path = os.path.join(self.root, "state", "KILL")

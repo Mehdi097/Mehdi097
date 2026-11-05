@@ -295,18 +295,35 @@ class Bridge(object):
         elif self.cfg.get("mode") in ("offline", "live"):
             self.mode = self.cfg["mode"]
         else:
-            snap = self.cfg.get("offline_snapshot") or os.path.join(self.root, "data", "snapshot.json")
+            snap = self._snapshot_path()
             self.mode = "offline" if (not MT5_AVAILABLE and os.path.exists(snap)) else "live"
         if self.mode == "live" and not MT5_AVAILABLE:
             # explicit live request without the package: fail loudly, not silently
             self.mode = "live"
+
+    # -- offline snapshot -------------------------------------------------
+    def _snapshot_path(self):
+        """Where the offline snapshot is, whether the path is absolute, relative
+        to the CWD, or relative to the trader folder (the exe runs from anywhere)."""
+        raw = self.cfg.get("offline_snapshot") or ""
+        candidates = []
+        if raw:
+            candidates.append(raw)
+            if not os.path.isabs(raw):
+                candidates.append(os.path.join(self.root, raw))
+                candidates.append(os.path.join(self.root, os.path.basename(raw)))
+        candidates.append(os.path.join(self.root, "data", "snapshot.json"))
+        for cand in candidates:
+            if cand and os.path.exists(cand):
+                return cand
+        return candidates[0]
 
     # -- connection -------------------------------------------------------
     def _connect(self):
         if self._connected:
             return
         if self.mode == "offline":
-            path = self.cfg.get("offline_snapshot") or os.path.join(self.root, "data", "snapshot.json")
+            path = self._snapshot_path()
             snap = read_json(path)
             if snap is None:
                 raise BridgeError(
@@ -756,11 +773,31 @@ def _print(obj):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="MT5 bridge: doctor, account, specs, quotes, orders.")
-    ap.add_argument("command", nargs="?", default="doctor",
-                    choices=["doctor", "account", "summary", "spec", "tick", "rates",
-                             "positions", "pending", "symbols", "snapshot", "close", "check"])
-    ap.add_argument("args", nargs="*")
+    # Flags and command words are separated by hand: argparse cannot split
+    # "spec EURUSD" reliably when --flags sit between or before them, which is
+    # exactly what the .exe runner does (--trader-dir first, then the command).
+    raw = list(sys.argv[1:] if argv is None else argv)
+    value_flags = {"--trader-dir", "--count", "--search", "--limit"}
+    flags, words = [], []
+    i = 0
+    while i < len(raw):
+        token = raw[i]
+        if token in value_flags and i + 1 < len(raw):
+            flags.extend([token, raw[i + 1]])
+            i += 2
+            continue
+        if token.startswith("-") and token != "-":
+            flags.append(token)
+            i += 1
+            continue
+        words.append(token)
+        i += 1
+
+    ap = argparse.ArgumentParser(
+        description="MT5 bridge: doctor, account, specs, quotes, positions.",
+        epilog="commands: doctor | account | summary | spec SYMBOL | tick SYMBOL | "
+               "rates SYMBOL TF N | positions | pending | symbols [--search X] | "
+               "snapshot --write | close TICKET")
     ap.add_argument("--trader-dir", default="trader")
     ap.add_argument("--offline", action="store_true", help="no terminal, read the snapshot")
     ap.add_argument("--live", action="store_true")
@@ -769,7 +806,16 @@ def main(argv=None):
     ap.add_argument("--count", type=int, default=20)
     ap.add_argument("--search", default="")
     ap.add_argument("--limit", type=int, default=0)
-    a = ap.parse_args(argv)
+    a = ap.parse_args(flags)
+
+    commands = ("doctor", "account", "summary", "spec", "tick", "rates", "positions",
+                "pending", "symbols", "snapshot", "close", "check")
+    if words and words[0] in commands:
+        a.command, a.args = words[0], words[1:]
+    elif words:
+        ap.error("command ma3roufch / unknown command: %s" % words[0])
+    else:
+        a.command, a.args = "doctor", []
 
     offline = True if a.offline else (False if a.live else None)
     b = Bridge(a.trader_dir, offline=offline)

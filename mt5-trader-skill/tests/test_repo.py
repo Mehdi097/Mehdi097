@@ -84,6 +84,20 @@ class TestStructure(unittest.TestCase):
             if SKILLS[folder] != "bridge.py":
                 self.assertNotIn("import MetaTrader5", source, folder)
 
+    def test_pyinstaller_spec_bundles_every_skill(self):
+        spec_path = os.path.join(ROOT, "mt5-app", "mt5trader.spec")
+        self.assertTrue(os.path.isfile(spec_path))
+        with open(spec_path, encoding="utf-8") as fh:
+            source = fh.read()
+        block = re.search(r"FOLDERS = \[(.*?)\]", source, re.S)
+        self.assertIsNotNone(block, "FOLDERS list missing from the spec")
+        bundled = set(re.findall(r'"(mt5-[\w-]+)"', block.group(1)))
+        for folder in SKILLS:
+            self.assertIn(folder, bundled, "%s is not bundled into the exe" % folder)
+            self.assertTrue(os.path.isdir(os.path.join(ROOT, folder)))
+        self.assertIn('os.path.join(HERE, "runner.py")', source)
+        self.assertIn('collect_all("MetaTrader5")', source)
+
     def test_third_party_imports_are_optional_or_stdlib(self):
         allowed = {"MetaTrader5", "numpy"}
         for folder in SKILLS:

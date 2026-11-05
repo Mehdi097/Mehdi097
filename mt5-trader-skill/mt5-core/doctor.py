@@ -30,7 +30,16 @@ def _core(name):
     if key in sys.modules:
         return sys.modules[key]
     here = os.path.dirname(os.path.abspath(__file__))
-    for cand in (here, os.path.join(here, "..", "mt5-core"), os.environ.get("MT5_TRADER_CORE", "")):
+    # frozen (PyInstaller) or a normal checkout
+    bundle = getattr(sys, "_MEIPASS", None)
+    if not bundle and getattr(sys, "frozen", False):
+        bundle = os.path.dirname(os.path.abspath(sys.executable))
+    candidates = [here, os.path.join(here, "..", "mt5-core"),
+                  os.environ.get("MT5_TRADER_CORE", "")]
+    if bundle:
+        candidates[:0] = [os.path.join(bundle, "mt5-core"),
+                          os.path.join(bundle, "..", "mt5-core"), bundle]
+    for cand in candidates:
         if not cand:
             continue
         path = os.path.join(cand, name + ".py")

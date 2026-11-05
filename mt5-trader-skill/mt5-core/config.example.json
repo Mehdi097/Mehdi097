@@ -10,7 +10,7 @@
   "magic": 20261106,
   "deviation": 20,
   "retries": 3,
-  "offline_snapshot": "trader/data/snapshot.json",
+  "offline_snapshot": "data/snapshot.json",
 
   "account_currency": "USD",
   "portfolio_risk_pct": 3.0,

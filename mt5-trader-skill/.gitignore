@@ -9,3 +9,8 @@ __pycache__/
 # Local secrets (credentials belong in environment variables anyway)
 .env
 .secret.json
+
+# PyInstaller output
+mt5-app/build/
+mt5-app/dist/
+*.manifest

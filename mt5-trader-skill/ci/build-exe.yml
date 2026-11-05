@@ -1,0 +1,96 @@
+name: build-exe
+
+# Builds mt5trader.exe on a real Windows runner (PyInstaller cannot cross-compile).
+# Result: an artifact on the run, and the release tagged `exe-latest`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Also publish to the `exe-latest` release"
+        type: boolean
+        default: true
+  push:
+    branches:
+      - main
+      - "arena/**"
+    paths:
+      - "mt5-trader-skill/**"
+      - ".github/workflows/build-exe.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          architecture: "x64"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller MetaTrader5
+          python -c "import MetaTrader5, PyInstaller; print('MetaTrader5', MetaTrader5.__version__)"
+
+      - name: Unit tests (offline, no terminal)
+        working-directory: mt5-trader-skill
+        run: python -m unittest discover -s tests -t tests -v
+
+      - name: Build the exe
+        working-directory: mt5-trader-skill/mt5-app
+        run: python build_exe.py
+
+      - name: Smoke test the exe
+        working-directory: mt5-trader-skill/mt5-app
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not (Test-Path "dist/mt5trader.exe")) { throw "no exe produced" }
+          $size = (Get-Item "dist/mt5trader.exe").Length / 1MB
+          "exe size: {0:N1} MB" -f $size
+          if ($size -lt 5) { throw "exe is suspiciously small" }
+          .\dist\mt5trader.exe version
+          if ($LASTEXITCODE -ne 0) { throw "version failed" }
+          .\dist\mt5trader.exe help | Select-Object -First 12
+          if ($LASTEXITCODE -ne 0) { throw "help failed" }
+          # doctor with no terminal must fail gracefully (exit 1), not crash (>=2)
+          New-Item -ItemType Directory -Force -Path smoke | Out-Null
+          .\dist\mt5trader.exe doctor --offline --trader-dir smoke
+          "doctor exit: $LASTEXITCODE"
+          if ($LASTEXITCODE -gt 1) { throw "doctor crashed instead of reporting" }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mt5trader-windows-x64
+          path: mt5-trader-skill/mt5-app/dist/mt5trader.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish to the exe-latest release
+        if: github.event_name == 'push' || inputs.publish
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: exe-latest
+          name: mt5trader.exe (latest build)
+          prerelease: true
+          body: |
+            Standalone Windows build of `mt5trader.exe` from
+            `${{ github.sha }}` on branch `${{ github.ref_name }}`.
+
+            No Python needed. MetaTrader 5 must be installed and running.
+            Demo first: it will not send anything without a risk PASS and your yes.
+
+            ```
+            mt5trader.exe setup
+            mt5trader.exe doctor
+            ```
+          files: mt5-trader-skill/mt5-app/dist/mt5trader.exe
