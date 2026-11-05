@@ -1,0 +1,51 @@
+{
+  "_comment": "Copy to trader/config.json and edit. Limits are hard gates: mt5-risk blocks anything that breaks them. Credentials NEVER go here - use MT5_LOGIN / MT5_PASSWORD / MT5_SERVER / MT5_PATH env vars (SETUP.md).",
+
+  "mode": "auto",
+  "terminal_path": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+  "login": 0,
+  "server": "",
+  "symbol_suffix": "",
+  "timeframe": "H1",
+  "magic": 20261106,
+  "deviation": 20,
+  "retries": 3,
+  "offline_snapshot": "trader/data/snapshot.json",
+
+  "account_currency": "USD",
+  "portfolio_risk_pct": 3.0,
+  "risk_pct_per_trade": 0.5,
+  "max_risk_pct_per_trade": 1.0,
+  "stop_atr_multiple": 1.5,
+  "default_stop_pips": 20,
+  "default_tp_pips": 40,
+
+  "max_lots_per_order": 1.0,
+  "max_total_lots": 3.0,
+  "max_open_positions": 6,
+  "max_positions_per_symbol": 1,
+  "max_orders_per_day": 10,
+
+  "max_daily_loss_pct": 2.0,
+  "max_drawdown_pct": 10.0,
+  "min_margin_level_pct": 300,
+  "max_spread_points": 30,
+  "min_reward_risk": 1.5,
+
+  "require_sl": true,
+  "allow_short": true,
+  "allow_pending": true,
+  "allow_live": false,
+  "allow_min_lot": false,
+
+  "news_blackout_minutes": 30,
+  "news_currencies": ["USD", "EUR", "GBP", "JPY", "XAU"],
+  "news_feeds": [
+    "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
+    "https://www.investing.com/rss/news_1.rss"
+  ],
+
+  "blocked_symbols": [],
+  "allowed_symbols": [],
+  "blocked_hours_utc": []
+}

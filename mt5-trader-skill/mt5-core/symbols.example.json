@@ -1,0 +1,17 @@
+{
+  "_comment": "Your universe. Any symbol your broker lists: FX, metals, indices, crypto CFDs. Run `python mt5-core/bridge.py symbols --search XAU` to find the exact name (suffixes like .raw / m are real).",
+  "timeframe": "H1",
+  "timeframes": ["H1", "H4", "D1"],
+  "bars": 300,
+  "symbols": [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "AUDUSD",
+    "USDCAD",
+    "XAUUSD",
+    "US30",
+    "NAS100",
+    "BTCUSD"
+  ]
+}

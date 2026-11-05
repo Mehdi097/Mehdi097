@@ -1,0 +1,7 @@
+symbol,side,volume,price
+EURUSD,buy,0.50,1.0850
+GBPUSD,sell,0.25,1.2720
+XAUUSD,buy,0.10,3950.00
+USDJPY,buy,0.30,152.40
+US30,sell,0.20,47250.0
+NAS100,buy,0.15,20850.0

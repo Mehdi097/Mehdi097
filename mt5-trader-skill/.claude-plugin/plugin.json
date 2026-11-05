@@ -1,0 +1,25 @@
+{
+  "name": "mt5-trader-skill",
+  "version": "1.0.0",
+  "description": "Twelve MetaTrader 5 skills: symbol analysis, screening, copying a book, lot sizing from the symbol's own contract spec, a pre-trade risk gate, an executor that needs your yes, journal stats, alerts, exposure rebalancing, the economic calendar and headlines. Python + the official MetaTrader5 package, paper first.",
+  "author": {
+    "name": "Mehdi097"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Mehdi097/Mehdi097/tree/main/mt5-trader-skill",
+  "keywords": ["metatrader5", "mt5", "forex", "trading", "risk", "python", "mt5-python"],
+  "skills": [
+    "./mt5-core",
+    "./mt5-analyst",
+    "./mt5-screener",
+    "./mt5-copycat",
+    "./mt5-budget",
+    "./mt5-risk",
+    "./mt5-broker",
+    "./mt5-journal",
+    "./mt5-alerts",
+    "./mt5-exposure",
+    "./mt5-calendar",
+    "./mt5-news"
+  ]
+}

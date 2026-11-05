@@ -1,0 +1,11 @@
+# Your account, your orders, your journal: runtime state, never in git.
+trader/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local secrets (credentials belong in environment variables anyway)
+.env
+.secret.json

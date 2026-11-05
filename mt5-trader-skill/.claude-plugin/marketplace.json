@@ -1,0 +1,20 @@
+{
+  "name": "mt5-trader-skill",
+  "owner": {
+    "name": "Mehdi097"
+  },
+  "metadata": {
+    "description": "MetaTrader 5 trading skills for Claude: analyse, size, gate, execute with an explicit yes, journal. Paper first, no trade without your approval.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "mt5-trader-skill",
+      "source": "./",
+      "description": "Twelve MT5 skills driven by the official MetaTrader5 python package.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["metatrader5", "mt5", "forex", "trading", "risk"]
+    }
+  ]
+}
