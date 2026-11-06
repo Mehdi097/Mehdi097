@@ -159,6 +159,30 @@ class TestScreener(unittest.TestCase):
         hint = screen.hint_for(counts, screen.DEFAULT_RULES)
         self.assertIn("trend", hint)
 
+    def test_sides_flag_forces_a_direction_when_flat(self):
+        """`screen --sides buy` is the documented escape hatch for a flat D1."""
+        fails, _, side, _, _ = screen.check_symbol(
+            self.row(trend_d1="flat"), dict(screen.DEFAULT_RULES, trend="any", sides="buy"))
+        self.assertEqual(fails, [])
+        self.assertEqual(side, "buy")
+
+        tmp = tempfile.mkdtemp()
+        try:
+            root = _load.make_trader(tmp)
+            _load.write_json(os.path.join(root, "metrics.json"), {"symbols": {
+                "EURUSD": {"symbol": "EURUSD", "price": 1.08, "atr_h1_pips": 10.0,
+                           "adr20_pips": 60.0, "spread_points": 8, "trend_d1": "flat",
+                           "trend_h1": "flat", "suggested_stop_pips": 15.0,
+                           "suggested_tp_pips": 30.0}}})
+            code = _load.run(screen, [os.path.join(root, "metrics.json"),
+                                      "--trend", "any", "--sides", "sell",
+                                      "--write-targets"])
+            self.assertEqual(code, 0)
+            targets = _load.read_json(os.path.join(root, "targets.json"))["targets"]
+            self.assertEqual([t["side"] for t in targets], ["sell"])
+        finally:
+            _load.cleanup(tmp)
+
     def test_empty_screen_does_not_overwrite_targets(self):
         tmp = tempfile.mkdtemp()
         try:

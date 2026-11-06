@@ -166,6 +166,8 @@ def main(argv=None):
     ap.add_argument("--trader-dir", default=None)
     ap.add_argument("--top", type=int, default=None)
     ap.add_argument("--trend", default=None, choices=["up", "down", "flat", "any"])
+    ap.add_argument("--sides", default=None, choices=["trend", "buy", "sell", "both"],
+                    help="trend (follow D1) | buy/sell (your call, even when flat) | both")
     ap.add_argument("--rank-by", default=None,
                     choices=["trend_strength", "volatility", "cost", "spread_vs_atr"])
     ap.add_argument("--show-fails", action="store_true")
@@ -184,6 +186,8 @@ def main(argv=None):
         rules.update(loaded)
     if a.trend:
         rules["trend"] = a.trend
+    if a.sides:
+        rules["sides"] = a.sides
     if a.rank_by:
         rules["rank_by"] = a.rank_by
     top = a.top if a.top is not None else int(rules.get("top") or 5)
@@ -315,7 +319,8 @@ def hint_for(counts, rules, failed=None):
                      % (", ".join(flat[:6]) or "l'universe"))
         lines.append("    Ila bghit t-dir l'jjiha b yeddik: f trader/rules.json 7ett")
         lines.append("    \"trend\": \"any\", \"sides\": \"buy\"  (wla \"sell\").")
-        lines.append("    Ila bghit ghir l'volatilité: \"sides\": \"both\" kaytba3 trend ila kayn.")
+        lines.append("    Wla bla JSON, dirha b l'commande: `mt5trader.exe screen --sides buy` "
+                     "(wla --sides sell).")
 
     if any("spread" in k for k in counts):
         wide = []

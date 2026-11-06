@@ -31,6 +31,8 @@ Fixes from a real run on a live MT5 **demo** account (build 6304, equity 100 000
 - `analyze` prints a table (SYMBOL / PRICE / H1 / D1 / gap% / ATR / ADR / SPRD / RSI /
   STOPp) instead of a wall of JSON; `gap%` is EMA50 vs EMA200 on D1, and `|gap| <
   0.05 %` means “flat” — that is *why* a symbol has no side.
+- `screen --sides buy` (or `sell`) forces a direction when you want it anyway,
+  without editing JSON.
 - `plan` on an empty batch tells you to run `screen --show-fails` (or the copycat
   equivalent) instead of “targets empty”.
 - `calendar` says out loud that the Python package has no MT5 calendar (MQL5 only)
@@ -46,7 +48,7 @@ Fixes from a real run on a live MT5 **demo** account (build 6304, equity 100 000
 - The menu prints once, blank input just asks again, `h` reprints it, unknown keys say
   `ma fhemtch … (h l l'liste)`, and an error inside one command no longer kills the menu.
 
-Tests: 148.
+Tests: 149.
 
 ## 1.0.0 — 2026-11-05
 
