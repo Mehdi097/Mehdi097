@@ -1,0 +1,89 @@
+========================================
+ mt5-trader-skill  -  bda mn hna
+========================================
+
+Chnou f had l'zip: l'pack kamel (12 skills) + l'app `mt5-app/` li katwelli
+`mt5trader.exe`. L'exe ma kaynch f l'zip 3la 9bel ma tbnih, 7it exe dyal Windows
+kaytbna ghir 3la Windows (PyInstaller ma kay-cross-compilich).
+
+
+----------------------------------------
+ 1) BGHIT L'EXE? (2 dqayq, 3la Windows)
+----------------------------------------
+Khass: Windows + Python 3.8+ 64-bit (mn python.org, 3ellem ✅ Add to PATH).
+
+   a. Fatte7 folder:  mt5-trader-skill\mt5-app
+   b. Doubli klik 3la:  build_exe.bat
+   c. Kaytle3:  mt5-trader-skill\mt5-app\dist\mt5trader.exe
+
+Ila ma bghitich l'bat, f cmd:
+
+   cd mt5-trader-skill\mt5-app
+   pip install pyinstaller MetaTrader5
+   python build_exe.py
+
+L'exe kaybqa fih koulchi (bla Python f l'PC li ghadi tkhdem bih), walakin
+MetaTrader 5 khass ykoun installé w mfto7 3la dik l'machine.
+
+
+----------------------------------------
+ 2) BLA EXE (7etta daba, 3la ay system)
+----------------------------------------
+   python mt5-trader-skill\mt5-app\runner.py
+
+Kaytle3 lik nefs l'menu dyal l'exe (setup, doctor, analyze, plan, check,
+tickets, send...). Wla b commande:
+
+   python mt5-trader-skill\mt5-app\runner.py setup
+   python mt5-trader-skill\mt5-app\runner.py doctor
+
+
+----------------------------------------
+ 3) GHADI NBDA B CHNO?
+----------------------------------------
+   mt5trader.exe setup                 (wla runner.py setup)
+   notepad trader\config.json          -> terminal_path + l'limites
+   mt5trader.exe doctor                -> khass koulchi OK
+
+Mn be3d l'chain:
+
+   analyze --write
+   screen --show-fails --write-targets
+   plan --write
+   check
+   tickets
+   approve --id <ID> --reply "yes"
+   send --id <ID> --dry-run
+   send --id <ID>
+   journal --days 30
+
+DEMO L'OWWEL. `send` khass: (1) PASS mn check 3la dak l'order, (2) yes dyalek
+3la dak l'id. Bla hada, walo.
+Ila chi 7aja ma mfhmtich:  mt5trader.exe kill on
+
+
+----------------------------------------
+ 4) BGHIT GITHUB YBNI L'EXE 3LIK?
+----------------------------------------
+L'fichier dyal l'workflow kayn f:  mt5-trader-skill\ci\build-exe.yml
+GitHub kay9ra ghir `.github/workflows/`, donc:
+
+   github.com/Mehdi097/Mehdi097 -> Add file -> Create new file
+   smiya: .github/workflows/build-exe.yml
+   ls9 l'contenu dyal ci/build-exe.yml -> Commit
+
+Ba3d 3-4 dqayq: Actions -> build-exe -> artifact `mt5trader-windows-x64`
+(wla Releases -> `exe-latest`).
+
+
+----------------------------------------
+ 5) L'FICHIERS LI KHASSK T3REF
+----------------------------------------
+   README.md        chnou f l'pack, l'chain, l'arithmetic
+   SETUP.md         mn zéro l order 3la demo + jdwal dyal l'errors
+   PROMPT.md        l'bloc li kat-ls9o f Claude + 10 qawa3id
+   BUILD-EXE.md     l'exe: build, troubleshooting, SmartScreen
+   mt5-app/         runner.py, mt5trader.spec, build_exe.py/.bat
+   ci/              build-exe.yml (workflow dyal Windows)
+
+Machi nas7a maliya. L'leverage t9der tkhessek b sor3a.

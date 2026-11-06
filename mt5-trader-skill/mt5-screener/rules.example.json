@@ -1,0 +1,22 @@
+{
+  "_comment": "Copy to trader/rules.json. Every rule is a hard filter; --show-fails tells you why a symbol dropped.",
+
+  "min_atr_pips": 8,
+  "max_spread_points": 25,
+  "max_spread_to_atr": 0.12,
+  "min_adr_pips": 40,
+
+  "trend": "any",
+  "timeframe": "D1",
+  "sides": "trend",
+
+  "min_reward_risk": 1.5,
+  "max_swap_per_lot": 40,
+
+  "rank_by": "trend_strength",
+  "weights": "equal",
+  "top": 5,
+  "stop_atr_multiple": 1.5,
+
+  "blocked_symbols": []
+}

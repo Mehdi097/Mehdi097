@@ -1,0 +1,14 @@
+{
+  "_comment": "Copy to trader/alerts.json. Every alert needs a unique id. once=true fires a single time, cooldown_min stops repeats.",
+  "alerts": [
+    {"id": "eur-1.10", "symbol": "EURUSD", "type": "price_above", "level": 1.10, "once": true},
+    {"id": "eur-1.05", "symbol": "EURUSD", "type": "price_below", "level": 1.05, "once": true},
+    {"id": "gold-4000", "symbol": "XAUUSD", "type": "price_above", "level": 4000, "once": true},
+    {"id": "spread-eur", "symbol": "EURUSD", "type": "spread_above", "points": 25},
+    {"id": "move-gbp", "symbol": "GBPUSD", "type": "pips_move", "pips": 40, "window_min": 60},
+    {"id": "margin-floor", "type": "margin_level_below", "level": 250},
+    {"id": "floating-pain", "type": "floating_profit_below", "level": -200},
+    {"id": "london", "type": "session", "session": "london", "event": "open", "within_min": 5},
+    {"id": "ny-close", "type": "session", "session": "newyork", "event": "close", "within_min": 5}
+  ]
+}
