@@ -359,6 +359,7 @@ function renderMt5() {
     ['Latence', (c.latency_ms || 0) + ' ms'],
     ['Tentatives', c.attempts || 0],
     ['Dernière erreur', c.last_error || 'aucune'],
+    ['Trading réel', (S.settings.trading || {}).live_trading ? '⚠ Autorisé' : 'Bloqué · paper'],
     ['Message', c.message || '—'],
   ].map(r => `<div class="conn-row"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('');
   $('#toggles').innerHTML = TOGGLES.map(t => {
@@ -397,6 +398,12 @@ function fillForms() {
   const setVal = (el, val) => { if (el && document.activeElement !== el && el.value !== String(val)) el.value = val; };
   ['address','account','server','terminal_path','timeout','magic','deviation','symbol_prefix','symbol_suffix'].forEach(k => setVal(f.elements[k], mt[k] ?? ''));
   setVal(f.elements.mode, mt.mode || 'simulation');
+  f.elements.api_key.placeholder = mt.has_api_key
+    ? 'Clé enregistrée ' + (mt.api_key || '') + ' — laisser vide pour conserver'
+    : 'Collez votre clé API MetaTrader';
+  f.elements.password.placeholder = mt.has_password
+    ? 'Mot de passe enregistré — laisser vide pour conserver'
+    : 'Mot de passe du compte MT5';
   const mapEl = f.elements.symbol_map;
   const mapVal = JSON.stringify(mt.symbol_map || {}, null, 2);
   if (document.activeElement !== mapEl && mapEl.value !== mapVal) mapEl.value = mapVal;

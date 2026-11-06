@@ -149,10 +149,11 @@ class ApiHandler(BaseHTTPRequestHandler):
                 changed = (before["mt5"].get("mode") != after["mt5"].get("mode")
                            or before["mt5"].get("address") != after["mt5"].get("address")
                            or any(body.get("mt5", {}).get(k) for k in ("api_key", "password", "account", "server")))
+                # Toujours réécrire trader/config.json avec les nouvelles limites,
+                # sans effacer le portefeuille, les ordres ni le journal des agents.
+                self.engine.enqueue(self.engine.seed, False)
                 if changed and after["mt5"].get("auto_connect"):
                     self.engine.enqueue(self.engine.connect)
-                else:
-                    self.engine.enqueue(self.engine.seed, True)
                 return self._json({"ok": True, "settings": self.settings.public()})
 
             if path == "/api/mt5/test":
