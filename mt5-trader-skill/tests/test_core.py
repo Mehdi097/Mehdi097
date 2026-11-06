@@ -152,6 +152,9 @@ class TestLiveApiCalls(unittest.TestCase):
             def initialize(self, **kw):
                 return True
 
+            def snapshot(self, syms):
+                return {"symbols": {}}
+
             def shutdown(self):
                 pass
 
@@ -294,3 +297,75 @@ class TestBridgeOffline(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDoctorHonesty(unittest.TestCase):
+    """Things the first live run got wrong: it must not WARN about a path it does
+    not need, and it must not print margin -1.00 as if it were a number."""
+
+    def _doctor(self):
+        return _load.load("mt5-core", "doctor")
+
+    def _root(self):
+        import json
+        import tempfile
+        root = tempfile.mkdtemp(prefix="doctorhonesty-")
+        with open(os.path.join(root, "symbols.json"), "w", encoding="utf-8") as fh:
+            json.dump({"symbols": ["EURUSD"]}, fh)
+        return root
+
+    def _stub_bridge(self, doctor, path=""):
+        class _Bridge:
+            def __init__(self, root, offline=None):
+                self.mode = "live"
+                self.warnings = []
+                self.cfg = {"terminal_path": path, "default_stop_pips": 20,
+                            "allow_live": False}
+
+            def account(self):
+                return {"login": 1, "server": "MetaQuotes-Demo", "is_real": False,
+                        "trade_allowed": True, "equity": 100000.0, "currency": "USD"}
+
+            def terminal(self):
+                return {"trade_allowed": True, "connected": True, "build": 6304}
+
+            def spec(self, sym):
+                return {"digits": 5, "volume_min": 0.01, "pip_size": 0.0001,
+                        "point": 0.00001, "tick_size": 0.00001, "tick_value": 1.0,
+                        "contract_size": 100000, "filling_mode_mask": 2,
+                        "stops_level_points": 0, "margin_initial": 0.0,
+                        "currency_profit": "USD"}
+
+            def tick(self, sym):
+                return {"ask": 1.1, "bid": 1.0999, "spread_points": 10}
+
+            def margin(self, *a, **k):
+                return -1.0          # the broker refuses to compute it
+
+            def snapshot(self, syms):
+                return {"symbols": {}}
+
+            def shutdown(self):
+                pass
+
+        doctor.Bridge = _Bridge
+        doctor.bridge_mod.MT5_AVAILABLE = True
+
+    def test_missing_terminal_path_is_ok_when_the_terminal_answers(self):
+        doctor = self._doctor()
+        self._stub_bridge(doctor, path="")
+        result = doctor.run(self._root(), offline=False)
+
+        row = [r for r in result["checks"] if r["label"] == "terminal_path"][0]
+        self.assertEqual(row["status"], "OK", row)
+        self.assertIn("mfto7", row["detail"])
+
+    def test_negative_margin_is_not_printed_as_a_number(self):
+        doctor = self._doctor()
+        self._stub_bridge(doctor, path="")
+        result = doctor.run(self._root(), offline=False)
+
+        row = [r for r in result["checks"] if r["label"] == "symbol EURUSD"]
+        self.assertTrue(row, "no symbol check row")
+        self.assertNotIn("-1.00", row[0]["detail"])
+        self.assertIn("n/a", row[0]["detail"])

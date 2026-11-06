@@ -122,9 +122,11 @@ def run(root, offline=False, init=False):
     b = Bridge(root, offline=True if offline else None)
     cfg = b.cfg
     path = cfg.get("terminal_path") or os.environ.get("MT5_PATH") or ""
+    path_row = None
     if b.mode == "live":
-        rows.append(check(bool(path) and os.path.exists(path), "terminal_path",
-                          path or "not set - set it in trader/config.json or MT5_PATH", level="warn"))
+        path_row = check(bool(path) and os.path.exists(path), "terminal_path",
+                         path or "not set - set it in trader/config.json or MT5_PATH", level="warn")
+        rows.append(path_row)
     rows.append(check(True, "mode", "%s%s" % (b.mode,
                                               " (no terminal by design)" if b.mode == "offline" else "")))
 
@@ -142,6 +144,11 @@ def run(root, offline=False, init=False):
                           acct.get("trade_allowed"), level="warn"))
         rows.append(check(float(acct.get("equity") or 0) > 0, "equity > 0",
                           "%.2f %s" % (float(acct.get("equity") or 0), acct.get("currency", ""))))
+        if path_row is not None and path_row.get("status") == "WARN":
+            # it connected anyway: the terminal that is already running is enough
+            path_row["status"] = "OK"
+            path_row["detail"] = ("not set - kansta3mlo terminal li mfto7 / "
+                                  "using the terminal that is already running")
     except BridgeError as e:
         rows.append(check(False, "connection", str(e).splitlines()[0]))
         b.shutdown()

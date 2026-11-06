@@ -13,7 +13,10 @@ Fixes from a real run on a live MT5 **demo** account (build 6304, equity 100 000
 - `doctor` printed `margin -1.00` when `order_calc_margin` returns a negative value
   (the broker could not compute it) → now prints `margin n/a (l'broker ma 7sebach)`.
 - `doctor` said “klik AutoTrading” even when AutoTrading was already on → the detail
-  line now shows `trade_allowed=True` when it is OK, `value_per_point` as well.
+  line now shows `trade_allowed=True` when it is OK; the symbol line also shows
+  `value_per_point`.
+- `doctor` no longer WARNs `terminal_path not set` when the terminal that is already
+  running answered fine (`not set - kansta3mlo terminal li mfto7`).
 
 **No more silent zeroes**
 
@@ -43,7 +46,7 @@ Fixes from a real run on a live MT5 **demo** account (build 6304, equity 100 000
 - The menu prints once, blank input just asks again, `h` reprints it, unknown keys say
   `ma fhemtch … (h l l'liste)`, and an error inside one command no longer kills the menu.
 
-Tests: 146.
+Tests: 148.
 
 ## 1.0.0 — 2026-11-05
 
