@@ -577,8 +577,9 @@ class Bridge(object):
             return [dict(d) for d in self._snap.get("deals", [])]
         end = end or now_utc()
         start = start or (end - datetime.timedelta(days=30))
-        mt5.history_select_range(start, end)
-        rows = mt5.history_deals_get(start, pow(2, 31) - 1) or ()
+        # history_deals_get(date_from, date_to) is the whole API: there is no
+        # history_select_range in the Python package (that is MQL5 only).
+        rows = mt5.history_deals_get(start, end) or ()
         return [as_dict(d) for d in rows]
 
     def history_orders(self, start=None, end=None):

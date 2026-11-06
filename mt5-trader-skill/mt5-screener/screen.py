@@ -237,11 +237,15 @@ def main(argv=None):
         "generated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "rules": rules, "passed": passed,
         "failed": failed if a.show_fails else [
-            {"symbol": e["symbol"], "fails": e["fails"]} for e in failed],
+            {"symbol": e["symbol"], "fails": e["fails"], "notes": e["notes"]}
+            for e in failed],
         "counts": {"passed": len(passed), "failed": len(failed)},
     }
 
-    if a.write_targets:
+    if a.write_targets and not passed:
+        print("ma ktebtch targets.json: 0 symbols dazo / 0 passed, nothing written",
+              file=sys.stderr)
+    elif a.write_targets:
         targets = {
             "source": "screener",
             "generated": payload["generated"],
@@ -258,13 +262,94 @@ def main(argv=None):
 
     if a.json:
         print(json.dumps(payload, indent=2, sort_keys=True, default=str))
-    else:
-        for e in passed:
-            print("PASS %-8s %-4s weight %5.1f%%  ATR %s pips  spread %s"
-                  % (e["symbol"], e["side"], e["weight"], e["atr_h1_pips"], e["spread_points"]))
-        for e in failed:
-            print("FAIL %-8s %s" % (e["symbol"], "; ".join(e["fails"])))
+        return 0
+
+    for e in passed:
+        print("PASS %-8s %-4s weight %5.1f%%  ATR %s pips  spread %s"
+              % (e["symbol"], e["side"], e["weight"], e["atr_h1_pips"], e["spread_points"]))
+    for e in failed:
+        why = "; ".join(e["fails"] + e["notes"])
+        print("FAIL %-8s %s" % (e["symbol"], why))
+
+    counts = summarise(failed)
+    print("\n%d PASS / %d FAIL" % (len(passed), len(failed)))
+    for reason, number in sorted(counts.items(), key=lambda kv: -kv[1]):
+        print("   %-46s %d" % (reason, number))
+    if not passed:
+        print("\n%s" % hint_for(counts, rules, failed))
     return 0
+
+
+def summarise(failed):
+    """Group the failures into one line each, so 9 FAILs read as 3 problems."""
+    buckets = {}
+    for entry in failed:
+        text = " ".join(entry["fails"] + entry["notes"]).lower()
+        if "data error" in text or "not in market watch" in text:
+            key = "symbol machi f l'terminal / not in the terminal"
+        elif "spread" in text:
+            key = "spread kbar bzzaf / spread over the cap"
+        elif "atr" in text:
+            key = "volatility 9lila / ATR or ADR too small"
+        elif "no side" in text or "no trend" in text:
+            key = "bla trend / no direction (D1 flat)"
+        elif "reward:risk" in text:
+            key = "reward:risk 9lil / not enough payoff"
+        elif "swap" in text:
+            key = "swap ghali / swap too expensive"
+        else:
+            key = "chi 7aja akhra / other"
+        buckets[key] = buckets.get(key, 0) + 1
+    return buckets
+
+
+def hint_for(counts, rules, failed=None):
+    """The concrete fix for whatever blocked the batch, with the real numbers."""
+    failed = failed or []
+    lines = ["ma kaynch targets. L'7ol / the fix:"]
+
+    if any("no direction" in k for k in counts):
+        flat = [e["symbol"] for e in failed
+                if any("no side" in n or "no trend" in n for n in e.get("notes") or [])]
+        lines.append("  - bla trend f %s: `analyze --write` kaywerrik gap%% dyal EMA50/EMA200."
+                     % (", ".join(flat[:6]) or "l'universe"))
+        lines.append("    Ila bghit t-dir l'jjiha b yeddik: f trader/rules.json 7ett")
+        lines.append("    \"trend\": \"any\", \"sides\": \"buy\"  (wla \"sell\").")
+        lines.append("    Ila bghit ghir l'volatilité: \"sides\": \"both\" kaytba3 trend ila kayn.")
+
+    if any("spread" in k for k in counts):
+        wide = []
+        for entry in failed:
+            for text in entry.get("fails") or []:
+                if "spread" in text and ">" in text:
+                    try:
+                        wide.append((float(text.split("spread")[1].split()[0]),
+                                     entry.get("symbol"))) 
+                    except (IndexError, ValueError):
+                        pass
+        cap = float(rules.get("max_spread_points") or 0)
+        values = [value for value, _sym in wide] + [cap]
+        need = int(max(values) * 1.2) + 1
+        names = ", ".join("%s %d" % (sym, value) for value, sym in
+                          sorted(wide, reverse=True)[:3] if sym)
+        head = ("%s points > max %d" % (names, int(cap))) if names else "spread kbar"
+        lines.append("  - spread: %s -> zid \"max_spread_points\": %d f trader/rules.json"
+                     % (head, need))
+
+    if any("not in the terminal" in k for k in counts):
+        missing = [e["symbol"] for e in failed
+                   if any("data error" in f for f in e.get("fails") or [])]
+        for sym in missing[:4]:
+            lines.append("  - %s machi f l'terminal: `mt5trader.exe symbols --search %s`"
+                         % (sym, sym[:3]))
+        lines.append("    9ad trader/symbols.json b l'smiyat li kaynin, wla 7eyyedhom.")
+
+    if any("volatility" in k for k in counts):
+        lines.append("  - volatility: n9es \"min_atr_pips\" wla \"min_adr_pips\" "
+                     "f trader/rules.json")
+    if len(lines) == 1:
+        lines.append("  - chouf `analyze --write` w l'metrics, w 9ad trader/rules.json")
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":

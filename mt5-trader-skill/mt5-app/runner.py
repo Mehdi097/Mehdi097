@@ -30,7 +30,7 @@ import os
 import shutil
 import sys
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 FOLDERS = (
     "mt5-core", "mt5-analyst", "mt5-screener", "mt5-copycat", "mt5-budget",
@@ -222,30 +222,34 @@ def banner():
     print("")
 
 
+def print_menu():
+    print("  chnou bghit? / what do you want?  (h = help, q = quit)")
+    print("")
+    for key, command, label in MENU:
+        print("   %-3s %-38s %s" % (key, command, label))
+    print("")
+
+
 def menu():
     banner()
     maybe_bootstrap()
+    print_menu()
     while True:
-        print("  chnou bghit? / what do you want?")
-        print("")
-        for key, command, label in MENU:
-            print("   %-3s %-38s %s" % (key, command, label))
-        print("   %-3s %-38s %s" % ("h", "help", "every command, with its flags"))
-        print("   %-3s %-38s %s" % ("q", "quit", "khoroj"))
-        print("")
         try:
             choice = input("  > ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             print("")
             return 0
+        if not choice:
+            continue
         if choice in ("q", "quit", "exit", "0"):
             return 0
-        if choice in ("h", "help", "?"):
-            print_help()
+        if choice in ("h", "help", "?", "m", "menu"):
+            print_menu()
             continue
         picked = next((c for k, c, _ in MENU if k == choice), None)
         if not picked:
-            print("  ma fhemtch / not an option: %r\n" % choice)
+            print("  ma fhemtch / not an option: %r  (h l l'liste)\n" % choice)
             continue
         command, _, extra = picked.partition(" ")
         print("\n  --- %s ---\n" % picked)
@@ -257,11 +261,6 @@ def menu():
             print("  ERROR: %s" % e)
             code = 1
         print("\n  [exit %d]\n" % code)
-        try:
-            input("  Enter bach tkemmel / press Enter ")
-        except (EOFError, KeyboardInterrupt):
-            print("")
-            return 0
 
 
 def print_help():

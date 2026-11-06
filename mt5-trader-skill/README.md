@@ -15,6 +15,10 @@ ay symbol 3nd broker dyalek.
 
 ---
 
+**Version 1.0.1** — fixes from a real demo run: `journal` crashing on
+`history_select_range`, `doctor` lying with `margin -1.00`, and `screen`
+failing 9/9 without saying why. See [CHANGELOG.md](CHANGELOG.md).
+
 ## Chno kayn fih / What is in it
 
 | skill | English | Darija |

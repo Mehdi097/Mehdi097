@@ -60,6 +60,25 @@ BridgeError = bridge_mod.BridgeError
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+def suggest_symbols(b, name, limit=5):
+    """Close matches in the terminal, so a wrong symbol name is a one-line fix."""
+    tokens = [name.upper()]
+    for cut in (2, 3, 4):
+        tokens.append(name.upper()[:cut])
+    found = []
+    try:
+        everything = b.symbols()
+    except Exception:
+        return found
+    for token in tokens:
+        for candidate in everything:
+            if token and token in candidate.upper() and candidate not in found:
+                found.append(candidate)
+                if len(found) >= limit:
+                    return found
+    return found
+
+
 def check(ok, label, detail="", level=None):
     """ok True/False/None(unknown) -> OK / FAIL / WARN line."""
     if ok is True:
@@ -131,9 +150,11 @@ def run(root, offline=False, init=False):
 
     if b.mode == "live":
         term = b.terminal()
-        rows.append(check(term.get("trade_allowed", False), "AutoTrading ON",
-                          "terminal_info.trade_allowed=%s - klik AutoTrading f l'terminal"
-                          % term.get("trade_allowed"), level="warn"))
+        allowed = bool(term.get("trade_allowed"))
+        rows.append(check(
+            allowed, "AutoTrading ON",
+            "trade_allowed=True" if allowed
+            else "trade_allowed=False - klik l'boton AutoTrading f l'terminal", level="warn"))
         rows.append(check(term.get("connected", False), "terminal connected to broker",
                           term.get("connected"), level="warn"))
         rows.append(check(bool(term.get("build")), "terminal build", term.get("build"), level="warn"))
@@ -158,6 +179,7 @@ def run(root, offline=False, init=False):
             stop_pips = float(cfg.get("default_stop_pips", 20))
             loss = (sizing.price_to_points(spec, stop_pips * pip)
                     * sizing.value_per_point(spec) * min_lot)
+            margin_txt = "n/a (l'broker ma 7sebach)" if margin < 0 else "%.2f" % margin
             per_symbol[sym] = {
                 "digits": spec.get("digits"), "pip": pip,
                 "spread_points": tick.get("spread_points"),
@@ -170,17 +192,23 @@ def run(root, offline=False, init=False):
                 "affordable": affordable,
             }
             rows.append(check(True, "symbol %s" % sym,
-                              "%d digits, spread %s pts, min lot %.2f = margin %.2f, "
-                              "%.2f at a %.0f-pip stop"
+                              "%d digits, spread %s pts, min lot %.2f = margin %s, "
+                              "%.2f per point/lot, %.2f at a %.0f-pip stop"
                               % (spec.get("digits"), tick.get("spread_points"), min_lot,
-                                 margin, loss, stop_pips)))
+                                 margin_txt, sizing.value_per_point(spec), loss, stop_pips)))
             if not affordable:
                 rows.append(check(False, "symbol %s affordability" % sym,
                                   "min lot margin %.2f vs equity %.2f - too big"
                                   % (margin, equity), level="warn"))
         except BridgeError as e:
-            rows.append(check(False, "symbol %s" % sym, str(e).splitlines()[0]))
-            per_symbol[sym] = {"error": str(e)}
+            guess = suggest_symbols(b, sym)
+            detail = str(e).splitlines()[0]
+            if guess:
+                detail += "  |  9rib lih / closest in your terminal: %s" % ", ".join(guess)
+            else:
+                detail += "  |  walo 9rib / nothing similar: 7eyyed %s mn trader/symbols.json" % sym
+            rows.append(check(False, "symbol %s" % sym, detail))
+            per_symbol[sym] = {"error": str(e), "suggestions": guess}
 
     if b.mode == "live" and symbols:
         try:

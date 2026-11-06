@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import tempfile
@@ -132,6 +133,67 @@ class TestStops(unittest.TestCase):
 
     def test_reward_risk_none_without_stops(self):
         self.assertIsNone(sizing.reward_risk(1.08, None, 1.09))
+
+
+class TestLiveApiCalls(unittest.TestCase):
+    """The MetaTrader5 package exposes history_deals_get only: no history_select_range.
+
+    This is the exact call that crashed `journal` on a real terminal, so it gets
+    a fake terminal and stays a test.
+    """
+
+    def test_deals_uses_history_deals_get(self):
+        bridge = _load.load("mt5-core", "bridge")
+        calls = {}
+
+        class FakeMT5(object):
+            TIMEFRAME_H1 = 16385
+
+            def initialize(self, **kw):
+                return True
+
+            def shutdown(self):
+                pass
+
+            def last_error(self):
+                return (0, "ok")
+
+            def terminal_info(self):
+                return {"trade_allowed": True, "connected": True, "build": 6304}
+
+            def account_info(self):
+                return {"login": 1, "server": "MetaQuotes-Demo", "trade_mode": 0,
+                        "balance": 10000.0, "equity": 10000.0, "margin": 0.0,
+                        "margin_free": 10000.0, "margin_level": 0.0, "profit": 0.0,
+                        "currency": "USD", "leverage": 100}
+
+            def history_deals_get(self, start, end):
+                calls["deals"] = (start, end)
+                return [{"ticket": 1, "position_id": 1, "profit": 5.0, "entry": 1, "time": 1}]
+
+            def history_orders_get(self, start, end):
+                calls["orders"] = (start, end)
+                return ()
+
+        fake = FakeMT5()
+        self.assertFalse(hasattr(fake, "history_select_range"))
+        old_avail, old_mt5 = bridge.MT5_AVAILABLE, bridge.mt5
+        bridge.MT5_AVAILABLE, bridge.mt5 = True, fake
+        tmp = tempfile.mkdtemp()
+        try:
+            b = bridge.Bridge(tmp, offline=False, config={"mode": "live", "login": 1})
+            deals = b.deals()
+            self.assertEqual(len(deals), 1)
+            self.assertIn("deals", calls)
+            start, end = calls["deals"]
+            self.assertIsInstance(start, datetime.datetime)
+            self.assertIsInstance(end, datetime.datetime)
+            self.assertLess(start, end)
+            self.assertEqual(b.history_orders(), [])
+            b.shutdown()
+        finally:
+            bridge.MT5_AVAILABLE, bridge.mt5 = old_avail, old_mt5
+            _load.cleanup(tmp)
 
 
 class TestBridgeOffline(unittest.TestCase):

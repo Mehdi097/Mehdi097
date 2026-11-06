@@ -87,7 +87,9 @@ def read_targets(path):
         raise SizeError("no targets at %s - run mt5-screener or mt5-copycat first" % path)
     rows = data.get("targets", data) if isinstance(data, dict) else data
     if not rows:
-        raise SizeError("targets.json khawi / targets empty")
+        raise SizeError("targets.json khawi / targets empty - chouf 3lach: "
+                        "`mt5-trader-skill mt5-screener/screen.py --show-fails` "
+                        "(wla copycat ila l'targets kayjiw mn chi source)")
     out = []
     for row in rows:
         if not isinstance(row, dict) or not row.get("symbol"):

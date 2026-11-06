@@ -303,6 +303,14 @@ def main(argv=None):
         bridge_mod.write_json(path, payload)
         print("calendar -> %s (%d events, %d blackout windows, source %s)"
               % (path, len(events), len(windows), source))
+        if source == "none":
+            print("  3lach khawi / why empty: the MetaTrader5 python package has no "
+                  "calendar API (that is MQL5 only).\n"
+                  "  L'7ol / fix: 7ett l'events f trader/data/calendar.json, wla "
+                  "\"calendar_url\" f trader/config.json\n"
+                  "  kayrje3 {\"events\": [{\"time\": \"2026-11-06T13:30:00Z\", "
+                  "\"currency\": \"USD\", \"title\": \"NFP\", \"impact\": \"high\"}]}",
+                  file=sys.stderr)
     if a.json or not a.write:
         print(json.dumps(payload, indent=2, sort_keys=True, default=str))
     elif a.check:

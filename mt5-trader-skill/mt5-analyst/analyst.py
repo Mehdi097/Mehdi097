@@ -190,6 +190,8 @@ def symbol_metrics(b, symbol, cfg=None, timeframes=("H1", "D1"), bars=300):
             "atr_d1_pips": round(d_atr / pip, 1) if d_atr else None,
             "adr20_pips": round(daily_adr / pip, 1) if daily_adr else None,
             "trend_d1": trend_label(fast, slow, d_closes[-1]),
+            "ema_gap_pct": round((fast[-1] - slow[-1]) / d_closes[-1] * 100.0, 3)
+            if d_closes[-1] else None,
             "ema_slope_d1_pct": slope_pct(fast, 10),
             "today_range_pctile": percentile_of_last(ranges[-21:]) if len(ranges) >= 21 else None,
             "change_pct_d1": round((d_closes[-1] - d_closes[-2]) / d_closes[-2] * 100.0, 3)
@@ -209,6 +211,40 @@ def symbol_metrics(b, symbol, cfg=None, timeframes=("H1", "D1"), bars=300):
 
 def round_price(spec, price):
     return round(float(price), int(spec.get("digits", 5)))
+
+
+def _cell(value, width=7, digits=1):
+    if value is None:
+        return "%-*s" % (width, "-")
+    if isinstance(value, float):
+        return ("%*.*f" % (width, digits, value))
+    return ("%*s" % (width, value))
+
+
+def print_table(rows):
+    """The report a human reads: is there a trend, is it volatile, is it cheap."""
+    print("%-8s %-11s %-5s %-6s %-7s %-7s %-7s %-6s %-5s %-6s"
+          % ("SYMBOL", "PRICE", "H1", "D1", "gap%", "ATR H1", "ADR20", "SPRD", "RSI", "STOPp"))
+    print("-" * 82)
+    for sym in sorted(rows):
+        row = rows[sym]
+        if row.get("error"):
+            print("%-8s ERROR %s" % (sym, row["error"]))
+            continue
+        print("%-8s %-11s %-5s %-6s %-7s %-7s %-7s %-6s %-5s %-6s"
+              % (sym,
+                 ("%.*f" % (int(row.get("digits") or 5), float(row.get("price") or 0))),
+                 (row.get("trend_h1") or "-")[:4],
+                 (row.get("trend_d1") or "-")[:5],
+                 _cell(row.get("ema_gap_pct"), 7, 3),
+                 _cell(row.get("atr_h1_pips"), 7, 1),
+                 _cell(row.get("adr20_pips"), 7, 1),
+                 _cell(row.get("spread_points"), 6),
+                 _cell(row.get("rsi_h1"), 5, 1),
+                 _cell(row.get("suggested_stop_pips"), 6, 1)))
+    print("-" * 82)
+    print("gap% = EMA50 vs EMA200 on D1 (|gap| < 0.05 = flat). "
+          "STOPp = suggested stop in pips.")
 
 
 # ---------------------------------------------------------------- main
@@ -260,11 +296,10 @@ def main(argv=None):
             path = os.path.join(a.trader_dir, "metrics.json")
             bridge_mod.write_json(path, payload)
             print("metrics -> %s (%d symbols)" % (path, len(rows)))
-        if a.json or not a.write:
+        if a.json:
             print(json.dumps(payload, indent=2, sort_keys=True, default=str))
-        for sym, row in rows.items():
-            if row.get("error"):
-                print("%-8s ERROR %s" % (sym, row["error"]), file=sys.stderr)
+        else:
+            print_table(rows)
         return 0
     except BridgeError as e:
         print("ANALYST ERROR: %s" % e, file=sys.stderr)

@@ -72,6 +72,18 @@ class TestAnalystReport(unittest.TestCase):
         self.assertAlmostEqual(self.row["suggested_tp_pips"],
                                self.row["suggested_stop_pips"] * 1.5, places=1)
 
+    def test_table_prints_without_crashing(self):
+        import contextlib
+        import io
+        rows = {"EURUSD": self.row, "NOPE": {"symbol": "NOPE", "error": "not listed"}}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            analyst.print_table(rows)
+        out = buf.getvalue()
+        self.assertIn("EURUSD", out)
+        self.assertIn("ERROR", out)
+        self.assertIn("gap%", out)
+
     def test_write_metrics_file(self):
         code = _load.run(analyst, ["--trader-dir", self.root, "--offline", "--write",
                              "EURUSD", "XAUUSD"])
@@ -135,6 +147,37 @@ class TestScreener(unittest.TestCase):
             self.row(swap_long=-80.0), dict(screen.DEFAULT_RULES, max_swap_per_lot=40))
         self.assertTrue(any("swap" in f for f in fails))
 
+    def test_flat_trend_is_explained_not_silent(self):
+        fails, notes, side, _, _ = screen.check_symbol(
+            self.row(trend_d1="flat"), screen.DEFAULT_RULES)
+        self.assertEqual(fails, [])
+        self.assertIsNone(side)
+        self.assertTrue(any("no side" in n for n in notes), notes)
+        counts = screen.summarise([{"fails": fails, "notes": notes},
+                                   {"fails": ["spread 120 points > max 100"], "notes": []}])
+        self.assertIn("bla trend", " ".join(counts))
+        hint = screen.hint_for(counts, screen.DEFAULT_RULES)
+        self.assertIn("trend", hint)
+
+    def test_empty_screen_does_not_overwrite_targets(self):
+        tmp = tempfile.mkdtemp()
+        try:
+            root = _load.make_trader(tmp)
+            _load.write_json(os.path.join(root, "metrics.json"), {"symbols": {
+                "EURUSD": {"symbol": "EURUSD", "price": 1.08, "atr_h1_pips": 10.0,
+                           "adr20_pips": 60.0, "spread_points": 8, "trend_d1": "flat",
+                           "trend_h1": "flat", "suggested_stop_pips": 15.0,
+                           "suggested_tp_pips": 30.0}}})
+            keep = {"source": "previous", "targets": [{"symbol": "KEEP", "side": "buy",
+                                                       "weight": 100}]}
+            _load.write_json(os.path.join(root, "targets.json"), keep)
+            code = _load.run(screen, [os.path.join(root, "metrics.json"),
+                                      "--write-targets"])
+            self.assertEqual(code, 0)
+            self.assertEqual(_load.read_json(os.path.join(root, "targets.json")), keep)
+        finally:
+            _load.cleanup(tmp)
+
     def test_screen_end_to_end_writes_targets(self):
         tmp = tempfile.mkdtemp()
         try:
@@ -158,3 +201,35 @@ class TestScreener(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestScreenHints(unittest.TestCase):
+    """0 PASS should name the exact symbol / spread to fix, not give generic advice."""
+
+    def test_hint_names_symbols_and_real_spread(self):
+        import importlib.util
+        import pathlib
+        import sys as _sys
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        spec = importlib.util.spec_from_file_location(
+            "hint_screen_mod", root / "mt5-screener" / "screen.py")
+        mod = importlib.util.module_from_spec(spec)
+        _sys.modules["hint_screen_mod"] = mod
+        spec.loader.exec_module(mod)
+
+        failed = [
+            {"symbol": "US30", "fails": ["spread 120 points > max 100"], "notes": []},
+            {"symbol": "EURUSD", "fails": ["no side: trend is flat"],
+             "notes": ["no side: trend is flat"]},
+            {"symbol": "NAS100", "fails": ["data error: not in Market Watch"],
+             "notes": ["symbol not in Market Watch"]},
+        ]
+        counts = mod.summarise(failed)
+        text = mod.hint_for(counts, {"max_spread_points": 100}, failed)
+
+        self.assertIn("145", text)          # 120 * 1.2 + 1 -> above the real spread
+        self.assertIn("US30", text)
+        self.assertIn("EURUSD", text)
+        self.assertIn("NAS100", text)
+        self.assertIn("--search NAS", text)
