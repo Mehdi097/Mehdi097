@@ -160,6 +160,15 @@ class Engine:
                     p.unlink()
                 except OSError:
                     pass
+        if force:
+            # remet aussi le compte démo MT5 à zéro
+            for name in ("mt5_simulation.json", "mt5_bridge_simulation.json"):
+                p = cfgmod.RUNTIME_DIR / name
+                if p.exists():
+                    try:
+                        p.unlink()
+                    except OSError:
+                        pass
         self.store.refresh_artifacts(ARTIFACT_NAMES)
 
     # ------------------------------------------------------------------ outils

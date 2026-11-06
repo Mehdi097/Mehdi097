@@ -27,6 +27,7 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from ..settings import RUNTIME_DIR
 from .connector import SimulationConnector, MT5Error
 
 
@@ -45,7 +46,9 @@ class Bridge:
                     self.mt5 = mt5
         except Exception:  # noqa: BLE001
             self.mt5 = None
-        self.demo = SimulationConnector({}, initial_balance=10000.0)
+        self.demo = SimulationConnector(
+            {}, initial_balance=10000.0,
+            state_path=RUNTIME_DIR / "mt5_bridge_simulation.json")
         self.demo.connect()
         self._lock = threading.RLock()
 

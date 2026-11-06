@@ -15,12 +15,16 @@ vérifié : kill switch, ``live_trading``, risk PASS du jour, plafonds.
 """
 
 import json
+import os
 import random
 import threading
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime
+from pathlib import Path
+
+from ..settings import RUNTIME_DIR
 
 DEFAULT_PRICES = {
     "AAPL": 341.27, "AXP": 309.84, "GOOGL": 353.78, "GOOG": 354.10,
@@ -95,7 +99,7 @@ class SimulationConnector(BaseConnector):
     mode = "simulation"
     label = "Simulation · compte démo MT5"
 
-    def __init__(self, cfg, initial_balance=10000.0):
+    def __init__(self, cfg, initial_balance=10000.0, state_path=None):
         super().__init__(cfg)
         self.initial_balance = float(initial_balance)
         self.balance = self.initial_balance
@@ -104,6 +108,34 @@ class SimulationConnector(BaseConnector):
         self._history = []
         self._ticket = 900000
         self._rng = random.Random(20261106)
+        self.state_path = Path(state_path or (RUNTIME_DIR / "mt5_simulation.json"))
+        self._load()
+
+    # Le compte démo survit à un redémarrage de l'application : sinon les
+    # trades exécutés et les positions ouvertes se contrediraient au dashboard.
+    def _load(self):
+        try:
+            with open(self.state_path, encoding="utf-8") as fh:
+                d = json.load(fh)
+            self.balance = float(d.get("balance", self.balance))
+            self.prices.update(d.get("prices") or {})
+            self._positions = {int(k): v for k, v in (d.get("positions") or {}).items()}
+            self._history = list(d.get("history") or [])[-100:]
+            self._ticket = int(d.get("ticket", self._ticket))
+        except (OSError, ValueError, TypeError):
+            pass
+
+    def _save(self):
+        try:
+            self.state_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = str(self.state_path) + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump({"balance": self.balance, "prices": self.prices,
+                           "positions": self._positions, "history": self._history[-100:],
+                           "ticket": self._ticket}, fh, indent=1)
+            os.replace(tmp, self.state_path)
+        except OSError:
+            pass
 
     def connect(self):
         self.connected = True
@@ -126,6 +158,8 @@ class SimulationConnector(BaseConnector):
             for s, p in list(self.prices.items()):
                 drift = self._rng.uniform(-0.0016, 0.0016)
                 self._mark_price(s, p * (1 + drift))
+            # persistance légère : compte + positions + derniers prix
+            self._save()
 
     def quote(self, symbol):
         sym = self._map(symbol)
@@ -214,6 +248,7 @@ class SimulationConnector(BaseConnector):
                 "time": _now(), "mode": self.mode,
             }
             self._history.append(rec)
+            self._save()
             return rec
 
     def close_position(self, ticket):
@@ -223,6 +258,7 @@ class SimulationConnector(BaseConnector):
                 raise MT5Error("position %s introuvable" % ticket)
             price = self.prices.get(p["symbol"], p["price_open"])
             self.balance += p["volume"] * price
+            self._save()
             return {"ticket": ticket, "status": "closed", "price": round(price, 4), "time": _now()}
 
     def history(self):

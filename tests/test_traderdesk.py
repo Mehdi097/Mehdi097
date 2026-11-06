@@ -59,7 +59,8 @@ class RegistryTests(unittest.TestCase):
 
 class ConnectorTests(unittest.TestCase):
     def test_simulation_account_and_order(self):
-        c = SimulationConnector({}, initial_balance=5000)
+        c = SimulationConnector({}, initial_balance=5000,
+                                state_path=os.path.join(TMP, "sim-unit.json"))
         self.assertTrue(c.connect()["connected"])
         r = c.place_order(symbol="AAPL", side="buy", volume=3.66, price=341.27)
         self.assertEqual(r["ticket"], 900001)
@@ -68,6 +69,17 @@ class ConnectorTests(unittest.TestCase):
         c.tick()
         self.assertIn("profit", c.account())
         self.assertEqual(c.close_position(900001)["status"], "closed")
+
+    def test_simulation_state_survives_restart(self):
+        path = os.path.join(TMP, "sim-restart.json")
+        c = SimulationConnector({}, initial_balance=5000, state_path=path)
+        c.connect()
+        c.place_order(symbol="KO", side="buy", volume=7.86, price=90.11)
+        c2 = SimulationConnector({}, initial_balance=5000, state_path=path)
+        c2.connect()
+        self.assertEqual(len(c2.positions()), 1)
+        self.assertEqual(c2.positions()[0]["symbol"], "KO")
+        self.assertLess(c2.account()["balance"], 5000)
 
     def test_address_normalization(self):
         self.assertEqual(normalize_address("192.168.1.5:8765"), "http://192.168.1.5:8765")
