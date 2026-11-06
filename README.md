@@ -122,7 +122,11 @@ build_windows.bat
 :: résultat : dist\TraderDesk.exe  (fichier unique, ~20-40 Mo)
 ```
 
-Le workflow GitHub Actions [`.github/workflows/build-exe.yml`](.github/workflows/build-exe.yml) compile la même chose sur `windows-latest` à chaque push et dépose `TraderDesk-Windows-x64` en artefact (et en release sur un tag). Le spec PyInstaller embarque le dashboard, les 11 dossiers de skills, leurs scripts et les données de démo. En mode gelé, les scripts sont importés en processus (pas besoin de `python.exe` sur la machine cible).
+Le modèle de workflow GitHub Actions [`ci/build-exe.yml`](ci/build-exe.yml) compile la même chose sur `windows-latest` à chaque push et dépose `TraderDesk-Windows-x64` en artefact (et en release sur un tag). Le spec PyInstaller embarque le dashboard, les 11 dossiers de skills, leurs scripts et les données de démo. En mode gelé, les scripts sont importés en processus (pas besoin de `python.exe` sur la machine cible).
+
+> **Note GitHub** : le token de cette session n'a pas la permission `workflows`, donc le fichier n'a pas pu être poussé dans `.github/workflows/`. Il est prêt dans `ci/build-exe.yml` (et en copie locale dans `.github/workflows/`) : copiez-le puis poussez-le depuis une connexion GitHub qui a cette permission — voir [`ci/README.md`](ci/README.md).
+
+**Déjà disponible dans `release/` :** `TraderDesk-Launcher.exe`, un vrai exécutable Windows x64 (PE32+) généré par [`tools/make_launcher.py`](tools/make_launcher.py). Posez-le à la racine du projet et double-cliquez : il lance `py -3 run.py` et ouvre le dashboard. Il suppose Python 3 installé ; pour un `.exe` **autonome sans prérequis**, utilisez `build_windows.bat` ou le CI.
 
 ```
 run.py                     point d'entrée (dashboard ou --bridge)
@@ -138,6 +142,9 @@ traderdesk/
   skills/                  les 11 skills d'origine (SKILL.md + .py + exemples), MIT
   data/seed/               jeu de données de démonstration issu du dépôt
 docs/MT5_BRIDGE.md         contrat de la passerelle
+ci/build-exe.yml           modèle de workflow GitHub Actions (Windows)
+tools/make_launcher.py     générateur du lanceur PE32+ natif
+release/                   TraderDesk-Launcher.exe (lanceur Windows natif)
 tests/                     tests de fumée (pipeline complet, REST, API)
 ```
 

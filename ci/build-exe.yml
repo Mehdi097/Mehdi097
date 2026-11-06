@@ -1,0 +1,50 @@
+name: Build TraderDesk.exe (Windows)
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'run.py'
+      - 'traderdesk/**'
+      - 'TraderDesk.spec'
+      - '.github/workflows/build-exe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer PyInstaller
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: Compiler TraderDesk.exe
+        run: python -m PyInstaller --noconfirm --clean TraderDesk.spec
+
+      - name: Verifier le binaire
+        run: |
+          if (-not (Test-Path dist/TraderDesk.exe)) { throw "TraderDesk.exe absent" }
+          Get-Item dist/TraderDesk.exe | Select-Object Name,Length
+
+      - name: Deposer l'artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TraderDesk-Windows-x64
+          path: dist/TraderDesk.exe
+          if-no-files-found: error
+
+      - name: Copier l'exe dans une release (si tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/TraderDesk.exe
