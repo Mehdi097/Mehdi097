@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TraderDesk — 11 agents · MetaTrader 5</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">TD</div>
+      <div>
+        <div class="brand-name">TraderDesk</div>
+        <div class="brand-sub">11 AGENTS · MT5</div>
+      </div>
+    </div>
+    <div class="nav-label">ESPACE DE TRAVAIL</div>
+    <nav id="nav">
+      <button class="nav-item active" data-view="overview"><span class="ni">◫</span> Vue d'ensemble <span class="nav-badge" id="navAgents">11</span></button>
+      <button class="nav-item" data-view="agents"><span class="ni">◈</span> Les 11 agents</button>
+      <button class="nav-item" data-view="pipeline"><span class="ni">⇉</span> Pipeline & fichiers</button>
+      <button class="nav-item" data-view="orders"><span class="ni">⇄</span> Ordres & trades</button>
+      <button class="nav-item" data-view="mt5"><span class="ni">⛁</span> Connexion MT5 <span class="dot" id="navDot"></span></button>
+      <button class="nav-item" data-view="log"><span class="ni">≡</span> Journal temps réel</button>
+      <button class="nav-item" data-view="docs"><span class="ni">▤</span> Documentation</button>
+    </nav>
+    <div class="nav-label">SÉCURITÉ</div>
+    <div class="side-safety">
+      <div class="safety-row"><span>Mode</span><b id="sideMode">Simulation</b></div>
+      <div class="safety-row"><span>Auto-exécution</span><b id="sideAuto">ON</b></div>
+      <div class="safety-row"><span>Kill switch</span><b id="sideKill">OFF</b></div>
+      <button id="sideKillBtn" class="btn btn-danger btn-block">⛔ Arrêter les ordres</button>
+    </div>
+    <div class="side-foot">
+      <div>Pas un conseil financier.</div>
+      <div>Paper trading par défaut · v1.0</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Vue d'ensemble</h1>
+        <p id="pageSub">État du desk, des 11 agents et du compte MetaTrader 5</p>
+      </div>
+      <div class="top-actions">
+        <div id="connPill" class="conn-pill"><i></i><span>Connexion…</span></div>
+        <div class="clock" id="clock">--:--:--</div>
+        <button class="btn btn-ghost" id="btnConnect">↻ Reconnexion</button>
+        <button class="btn btn-primary" id="btnCycle">▶ Lancer un cycle</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- ==================== OVERVIEW ==================== -->
+      <section class="view active" id="view-overview">
+        <div class="kpis" id="kpis"></div>
+        <div class="grid-2">
+          <div class="card chart-card">
+            <div class="card-head"><h2>Équité du compte</h2><span class="muted" id="equityLabel">—</span></div>
+            <div id="equityChart" class="chart"></div>
+            <div class="account-strip" id="accountStrip"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Flux des agents</h2><span class="muted">4 pipelines du pack</span></div>
+            <div id="overviewPipelines" class="flow-list"></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2>Activité en direct</h2><span class="live-dot">LIVE</span></div>
+            <div id="overviewFeed" class="feed"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>État des 11 agents</h2><span class="muted" id="agentRunInfo">—</span></div>
+            <div id="overviewAgents" class="mini-agents"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Positions ouvertes (MT5)</h2><span class="muted" id="posCount">0</span></div>
+          <div id="overviewPositions" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ==================== AGENTS ==================== -->
+      <section class="view" id="view-agents">
+        <div class="info-banner">
+          <b>11 agents spécialisés</b> — chacun reprend exactement le <code>SKILL.md</code>, les commandes, les fichiers,
+          les règles et les limites du dépôt <a href="https://github.com/Jakeschincariol/trader-skill" target="_blank">trader-skill</a>.
+          Cliquez sur une carte pour voir la fiche complète, le journal, la dernière sortie et la doc d'origine.
+        </div>
+        <div id="agentGrid" class="agent-grid"></div>
+      </section>
+
+      <!-- ==================== PIPELINE ==================== -->
+      <section class="view" id="view-pipeline">
+        <div class="info-banner">
+          Chaque agent lit ce que le précédent a écrit dans <code>trader/</code>. Aucun ordre n'atteint le broker sans
+          <code>trader-risk</code> (PASS du jour) et le ticket <code>trader-broker</code>.
+        </div>
+        <div id="pipelineFlows" class="pipeline-flows"></div>
+        <div class="grid-2 artifact-layout">
+          <div class="card">
+            <div class="card-head"><h2>Fichiers du pipeline</h2><span class="muted">cliquez pour lire</span></div>
+            <div id="artifactList" class="artifact-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Contenu</h2><span class="muted" id="artifactName">—</span></div>
+            <pre id="artifactContent" class="code-block">Sélectionnez un fichier à gauche.</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== ORDERS ==================== -->
+      <section class="view" id="view-orders">
+        <div class="card">
+          <div class="card-head"><h2>Exécution automatique</h2><span class="muted">portes de sécurité</span></div>
+          <div id="execGates" class="gates"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Tickets en attente (trader-broker)</h2><span class="muted" id="ticketCount">0</span></div>
+          <div id="ticketTable" class="table-wrap"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Ordres envoyés à MetaTrader 5</h2><span class="muted" id="tradeCount">0</span></div>
+          <div id="tradeTable" class="table-wrap"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Positions & P/L</h2><span class="muted">temps réel du connecteur</span></div>
+          <div id="positionsTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ==================== MT5 ==================== -->
+      <section class="view" id="view-mt5">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2>Connexion MetaTrader 5</h2><span class="muted">adresse + clé API</span></div>
+            <form id="mt5Form" class="form">
+              <label>Mode de connexion
+                <select name="mode" id="cfgMode">
+                  <option value="simulation">Simulation (compte démo, sans risque)</option>
+                  <option value="rest">Passerelle REST (adresse + clé API)</option>
+                  <option value="local">Terminal MT5 local (package MetaTrader5)</option>
+                </select>
+              </label>
+              <div id="restFields">
+                <label>Adresse de la passerelle / serveur
+                  <input name="address" placeholder="http://127.0.0.1:8765" autocomplete="off">
+                  <small>URL du serveur MT5 / du pont REST fourni avec l'application.</small>
+                </label>
+                <label>Clé API
+                  <input name="api_key" type="password" placeholder="laisser vide = conserver la clé actuelle" autocomplete="new-password">
+                  <small>Envoyée dans <code>X-API-Key</code> et <code>Authorization: Bearer</code>. Stockée localement, jamais affichée.</small>
+                </label>
+              </div>
+              <div id="localFields" class="hidden">
+                <label>Numéro de compte
+                  <input name="account" placeholder="12345678" autocomplete="off">
+                </label>
+                <label>Mot de passe
+                  <input name="password" type="password" placeholder="laisser vide = conserver" autocomplete="new-password">
+                </label>
+                <label>Serveur du broker
+                  <input name="server" placeholder="Exness-Real / MetaQuotes-Demo" autocomplete="off">
+                </label>
+                <label>Chemin du terminal (optionnel)
+                  <input name="terminal_path" placeholder="C:\Program Files\MetaTrader 5\terminal64.exe" autocomplete="off">
+                </label>
+              </div>
+              <div class="form-row">
+                <label>Timeout (s)<input name="timeout" type="number" min="1" max="120"></label>
+                <label>Magic number<input name="magic" type="number"></label>
+                <label>Deviation (points)<input name="deviation" type="number"></label>
+              </div>
+              <div class="form-row">
+                <label>Préfixe symbole<input name="symbol_prefix" placeholder=""></label>
+                <label>Suffixe symbole<input name="symbol_suffix" placeholder=".a / .pro / #"></label>
+              </div>
+              <label>Correspondance des symboles (JSON)
+                <textarea name="symbol_map" rows="4" spellcheck="false"></textarea>
+                <small>Ex. <code>{"AAPL":"AAPL.a"}</code> — actions / CFD / indices selon votre broker.</small>
+              </label>
+              <div class="form-actions">
+                <button type="button" class="btn btn-ghost" id="btnTest">⚡ Tester la connexion</button>
+                <button type="submit" class="btn btn-primary">💾 Enregistrer & reconnecter</button>
+              </div>
+            </form>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-head"><h2>État de la connexion</h2><span class="live-dot">LIVE</span></div>
+              <div id="connDetails" class="conn-details"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h2>Paramètres de trading</h2><span class="muted">appliqués à tous les cycles</span></div>
+              <form id="tradingForm" class="form">
+                <div class="toggles" id="toggles"></div>
+                <div class="form-row">
+                  <label>Budget ($)<input name="budget" type="number" min="100" step="100"></label>
+                  <label>Cycle (s)<input name="cycle_seconds" type="number" min="20" step="10"></label>
+                  <label>Max ordres / cycle<input name="max_orders_per_cycle" type="number" min="1"></label>
+                </div>
+                <div class="form-row">
+                  <label>Max ordres / jour<input name="max_daily_orders" type="number" min="1"></label>
+                  <label>Volume max (lots)<input name="max_lot" type="number" min="0.01" step="0.01"></label>
+                  <label>Bande rebalance (%)<input name="rebalance_band_pct" type="number" min="0" step="0.5"></label>
+                </div>
+                <div class="form-row">
+                  <label>Stop loss (%)<input name="default_sl_pct" type="number" min="0" step="0.5"></label>
+                  <label>Take profit (%)<input name="default_tp_pct" type="number" min="0" step="0.5"></label>
+                  <label>Cap / position (%)<input name="max_position_pct" type="number" min="1" step="1"></label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">💾 Enregistrer les paramètres</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Brancher un vrai compte MT5</h2><span class="muted">3 étapes</span></div>
+          <div class="steps" id="bridgeSteps"></div>
+        </div>
+      </section>
+
+      <!-- ==================== LOG ==================== -->
+      <section class="view" id="view-log">
+        <div class="card">
+          <div class="card-head">
+            <h2>Journal temps réel</h2>
+            <div class="log-tools">
+              <input id="logSearch" placeholder="Filtrer…" autocomplete="off">
+              <select id="logLevel"><option value="">Tous niveaux</option><option value="info">Info</option><option value="success">Succès</option><option value="warn">Alerte</option><option value="error">Erreur</option><option value="trade">Trade</option></select>
+              <button class="btn btn-ghost" id="btnExport">⬇ CSV</button>
+            </div>
+          </div>
+          <div id="fullLog" class="full-log"></div>
+        </div>
+      </section>
+
+      <!-- ==================== DOCS ==================== -->
+      <section class="view" id="view-docs">
+        <div class="info-banner">
+          Source : <a href="https://github.com/Jakeschincariol/trader-skill" target="_blank">Jakeschincariol/trader-skill</a>
+          (MIT) — README et les 11 <code>SKILL.md</code> sont embarqués tels quels dans l'application, avec les scripts Python d'origine.
+        </div>
+        <div class="grid-2 docs-layout">
+          <div class="card">
+            <div class="card-head"><h2>Documents</h2><span class="muted">12 fichiers</span></div>
+            <div id="docList" class="doc-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2 id="docTitle">README</h2><span class="muted">markdown d'origine</span></div>
+            <pre id="docContent" class="code-block tall">Chargement…</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-eyebrow" id="modalCommand">/trader-…</div>
+        <h2 id="modalTitle">Agent</h2>
+        <div class="muted" id="modalRole"></div>
+      </div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-tabs" id="modalTabs">
+      <button class="active" data-tab="fiche">Fiche complète</button>
+      <button data-tab="sortie">Dernière sortie</button>
+      <button data-tab="journal">Journal</button>
+      <button data-tab="doc">SKILL.md</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="modalToggle">Désactiver l'agent</button>
+      <button class="btn btn-primary" id="modalRun">▶ Exécuter maintenant</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+<script src="/app.js"></script>
+</body>
+</html>

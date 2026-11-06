@@ -1,0 +1,18 @@
+# Données d'exécution (compte, configuration, clés API, fichiers trader/)
+runtime/
+.traderdesk/
+*.log
+
+# Build PyInstaller
+dist/
+build_traderdesk/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# L'exe compilé est volontairement conservé dans release/ (livrable)

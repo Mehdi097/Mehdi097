@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#0f1522"/>
+  <path d="M10 44 L22 34 L32 38 L44 20 L54 26" fill="none" stroke="#37e2b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44" cy="20" r="4" fill="#4aa8ff"/>
+  <text x="12" y="22" font-family="monospace" font-size="16" fill="#8b7cff">TD</text>
+</svg>

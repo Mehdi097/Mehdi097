@@ -1,0 +1,13 @@
+{
+  "as_of": "2026-10-13",
+  "source": "exemple du dépôt trader-skill (clôtures différées) / simulation TraderDesk",
+  "prices": {
+    "AAPL": 341.27,
+    "AXP": 309.84,
+    "GOOGL": 353.78,
+    "GOOG": 354.10,
+    "KO": 90.11,
+    "BAC": 53.96,
+    "BRK.B": 512.40
+  }
+}

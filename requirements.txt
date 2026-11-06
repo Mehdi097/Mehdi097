@@ -1,0 +1,9 @@
+# TraderDesk fonctionne avec la seule bibliothèque standard de Python 3.10+.
+# Dépendances OPTIONNELLES, uniquement sur Windows et uniquement pour le mode
+# "Terminal MT5 local" ou la passerelle qui parle au vrai terminal :
+#
+#   pip install MetaTrader5
+#
+# PyInstaller sert uniquement à fabriquer le .exe (voir build_windows.bat) :
+#
+#   pip install pyinstaller
